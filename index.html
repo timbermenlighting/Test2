@@ -231,7 +231,7 @@ h1, h2, h3, p { margin: 0; }
         <path d="M3 8.6v4A1.6 1.6 0 0 0 4.6 14.2h6.8A1.6 1.6 0 0 0 13 12.6v-4M3 11.4h10"/>
       </svg>
     </button>
-    <h1>FOR DEMO USE!</h1>
+    <h1>Timbermen Lighting LLC</h1>
     <button class="plus" type="button" data-soon aria-label="Create">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 1.5v13M1.5 8h13"/></svg>
     </button>
@@ -513,7 +513,7 @@ h1, h2, h3, p { margin: 0; }
     const h = document.createElement("h2"); h.textContent = title;
     slide.append(h, statCard([
       ["Gross volume", fmt.money(data.revenue[i])],
-      ["Orders", fmt.count(data.orders[i])],
+      ["Payments", fmt.count(data.orders[i])],
       ["Customers", fmt.count(data.orders[i])]
     ]));
     daysEl.append(slide);
