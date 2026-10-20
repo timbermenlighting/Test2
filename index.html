@@ -127,21 +127,20 @@ h1, h2, h3, p { margin: 0; }
 
 .ranges {
   display: flex;
-  gap: 12px;
-  margin-top: 14.4px;
+  justify-content: space-between;
+  gap: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 16px;
   overflow-x: auto;
-  scrollbar-width: none;
-  padding-left: calc(max(16px, env(safe-area-inset-left, 0px)) - 8.3px);
-  padding-right: max(8px, env(safe-area-inset-right, 0px));
 }
 .ranges::-webkit-scrollbar { display: none; }
 .ranges button {
-  flex: 0 0 auto;
-  height: 32px;
-  padding: 0 12.5px;
-  border-radius: 16px;
-  font: 400 12px/32px var(--font);
-  color: var(--muted);
+  flex: 1 1 auto;
+  padding: 8px 6px;
+  font-size: 14px;
+  text-align: center;
+  white-space: nowrap;
 }
 .ranges button[aria-pressed="true"] { background: var(--accent-fill); color: var(--on-accent); }
 
