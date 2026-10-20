@@ -5,30 +5,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
   <style>
-  html, body {
-  margin: 0;
-  width: 100%;
-  overflow-x: hidden;
-}
-
-body > *, body > * > * {
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-body > div, body > main {
-  width: 100% !important;
-  max-width: 600px !important;
-  margin: 0 auto !important;
-  padding-left: 16px !important;
-  padding-right: 16px !important;
-}
-
-svg, canvas {
-  width: 100% !important;
-  height: auto !important;
-}
- <style>
+  
 /* Layout: one phone-width column — sticky title bar, swipeable day cards, report list with range pills, fixed tab bar. Single dark look by design. */
 :root {
   color-scheme: dark;
@@ -67,7 +44,7 @@ body::before {
 }
 
 .app {
-  max-width: 480px;
+  max-width: 100%;
   margin: 0 auto;
   padding-bottom: calc(49px + var(--sab) + 28px);
 }
