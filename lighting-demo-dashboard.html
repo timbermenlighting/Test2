@@ -462,8 +462,8 @@ h1, h2, h3, p { margin: 0; }
     slide.className = "day";
     const h = document.createElement("h2"); h.textContent = title;
     slide.append(h, statCard([
-      ["Revenue", fmt.money(data.revenue[i])],
-      ["Orders", fmt.count(data.orders[i])],
+      ["Gross Volume", fmt.money(data.revenue[i])],
+      ["Payments", fmt.count(data.orders[i])],
       ["Customers", fmt.count(data.orders[i])]
     ]));
     daysEl.append(slide);
@@ -493,8 +493,8 @@ h1, h2, h3, p { margin: 0; }
 
   // ---------- Reports ----------
   const METRICS = [
-    { key: "revenue", title: "Revenue", f: fmt.money },
-    { key: "profit", title: "Net profit", f: fmt.money },
+    { key: "revenue", title: "Gross Volume", f: fmt.money },
+    { key: "profit", title: "Net volume from sales", f: fmt.money },
     { key: "orders", title: "Paid orders", f: fmt.count },
     { key: "feet", title: "Feet of lights", f: fmt.feet },
     { key: "tax", title: "Sales tax set aside", f: fmt.money }
