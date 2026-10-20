@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Lighting Demo Dashboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+<style>
+/* Layout: one phone-width column — sticky title bar, swipeable day cards, report list with range pills, fixed tab bar. Single dark look by design. */
+:root {
+  color-scheme: dark;
+  --bg: #14171d;
+  --tile: #1b1e25;
+  --line: #2b3039;
+  --shade: #12151b;
+  --fg: #c9ced8;
+  --muted: #8c99ad;
+  --tab: #a9b2c2;
+  --glyph: #768193;
+  --on-accent: #ffffff;
+  --accent: #746cff;
+  --accent-fill: #5f4cfe;
+  --accent-ink: #9188fd;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-chart: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+}
+
+html, body { background: var(--bg); }
+body {
+  color: var(--fg);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: var(--sat);
+  z-index: 10;
+  background: var(--bg);
+}
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding-bottom: calc(49px + var(--sab) + 28px);
+}
+.gutter {
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; }
+button:focus-visible, .days:focus-visible, .chart:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; border-radius: 6px; }
+h1, h2, h3, p { margin: 0; }
+
+/* Title bar */
+.topbar {
+  position: sticky;
+  top: var(--sat);
+  z-index: 5;
+  height: 33px;
+  display: grid;
+  grid-template-columns: 30px 1fr 30px;
+  align-items: center;
+  background: var(--bg);
+}
+.store {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  background: var(--tile);
+  color: var(--glyph);
+  display: grid; place-items: center;
+}
+.store svg { width: 16px; height: 16px; }
+.topbar h1 {
+  font: 600 17px/22px var(--font);
+  text-align: center;
+  color: var(--fg);
+  white-space: nowrap;
+}
+.plus {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: #746cff;
+  color: #fff;
+  display: grid; place-items: center;
+}
+.plus svg { width: 15px; height: 15px; }
+
+/* Yesterday / Today cards */
+.days {
+  display: flex;
+  gap: 8px;
+  margin-top: 17px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: max(16px, env(safe-area-inset-left, 0px));
+  scrollbar-width: none;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: 0;
+}
+.days::-webkit-scrollbar { display: none; }
+.days::after { content: ""; flex: 0 0 max(8px, calc(env(safe-area-inset-right, 0px) - 8px)); }
+.day { flex: 0 0 calc(100% - max(16px, env(safe-area-inset-right, 0px))); scroll-snap-align: start; min-width: 0; }
+.day h2 { font: 600 18px/22px var(--font); color: var(--fg); }
+
+.stat {
+  margin-top: 10.4px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  display: flex;
+  justify-content: space-around;
+  padding: 13px 0 13.4px;
+}
+.stat > div { display: flex; flex-direction: column; align-items: center; gap: 11.6px; min-width: 0; }
+.stat .l { font: 400 14px/18px var(--font); color: var(--fg); white-space: nowrap; }
+.stat .v { font: 600 20px/24px var(--font); color: var(--fg); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* Reports */
+.rhead { display: flex; justify-content: space-between; align-items: center; margin-top: 19.6px; }
+.rhead h2 { font: 600 18px/22px var(--font); color: var(--fg); }
+.edit { font: 600 14px/22px var(--font); color: var(--accent-ink); }
+
+.ranges {
+  display: flex;
+  gap: 4px;
+  justify-content: space-between;
+  margin-top: 14.4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-left: calc(max(16px, env(safe-area-inset-left, 0px)) - 6px);
+  padding-right: calc(max(16px, env(safe-area-inset-right, 0px)) - 6px);
+}
+.ranges::-webkit-scrollbar { display: none; }
+.ranges button {
+  flex: 0 0 auto;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 16px;
+  font: 400 12px/32px var(--font);
+  color: var(--muted);
+}
+.ranges button[aria-pressed="true"] { background: var(--accent-fill); color: var(--on-accent); }
+
+.hr { height: 1px; background: var(--line); transform-origin: top; }
+@media (min-resolution: 2dppx) { .hr { transform: scaleY(0.5); } }
+@media (min-resolution: 3dppx) { .hr { transform: scaleY(0.3334); } }
+.ranges + .hr { margin-top: 8px; }
+
+.report { padding-top: 18px; padding-bottom: 18.4px; }
+.r-title { font: 600 16px/20px var(--font); color: var(--fg); }
+.r-value { margin-top: 5px; font: 600 18px/22px var(--font); color: var(--accent-ink); font-variant-numeric: tabular-nums; }
+.r-range { margin-top: 2.4px; font: 400 12px/16px var(--font); color: var(--muted); }
+
+.chart { position: relative; height: 120px; margin-top: 6.6px; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.chart svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.chip {
+  position: absolute;
+  height: 15px;
+  padding: 0 6px;
+  border-radius: 3.5px;
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  font: 400 10px/15px var(--font-chart);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.report .stat { margin-top: 12px; }
+
+.note { padding-top: 16px; font: 400 12px/16px var(--font); color: var(--muted); }
+
+/* Tab bar */
+.tabbar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -1px 0 var(--shade);
+  padding: 8px env(safe-area-inset-right, 0px) calc(3px + var(--sab)) env(safe-area-inset-left, 0px);
+}
+.tab {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  color: var(--tab);
+  font: 400 10px/12px var(--font);
+  letter-spacing: 0.1px;
+}
+.tab svg { width: 22px; height: 22px; stroke-width: 2; }
+.tab[aria-current="page"] { color: var(--accent); }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(49px + var(--sab) + 14px);
+  transform: translate(-50%, 8px);
+  z-index: 20;
+  max-width: calc(100% - 32px);
+  padding: 9px 14px;
+  border-radius: 10px;
+  background: var(--tile);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  font: 400 13px/18px var(--font);
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+</style>
+
+<div class="app">
+  <header class="topbar gutter">
+    <button class="store" type="button" data-soon aria-label="Switch account">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M2 6.6 3.5 2h9L14 6.6a2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0Z"/>
+        <path d="M6 6.6 6.6 2M10 6.6 9.4 2"/>
+        <path d="M3 8.6v4A1.6 1.6 0 0 0 4.6 14.2h6.8A1.6 1.6 0 0 0 13 12.6v-4M3 11.4h10"/>
+      </svg>
+    </button>
+    <h1>FOR DEMO USE!</h1>
+    <button class="plus" type="button" data-soon aria-label="Create">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 1.5v13M1.5 8h13"/></svg>
+    </button>
+  </header>
+
+  <div class="days" id="days" tabindex="0" aria-label="Yesterday and today"></div>
+
+  <section aria-labelledby="reports-title">
+    <div class="rhead gutter">
+      <h2 id="reports-title">Reports overview</h2>
+      <button class="edit" type="button" data-soon>Edit</button>
+    </div>
+    <div class="ranges" id="ranges" role="group" aria-label="Time range"></div>
+    <div class="hr"></div>
+    <div id="reports"></div>
+    <p class="note gutter">Sample numbers. They change each time this page loads.</p>
+  </section>
+</div>
+
+<nav class="tabbar" aria-label="Main">
+  <button class="tab" type="button" aria-current="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M3.6 10.3 12 3.3l8.4 7V19a1.9 1.9 0 0 1-1.9 1.9H5.5A1.9 1.9 0 0 1 3.6 19Z"/>
+      <path d="M9.5 20.9v-5.4a2.5 2.5 0 0 1 5 0v5.4"/>
+    </svg>
+    Home
+  </button>
+  <button class="tab" type="button" data-soon>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M1.9 16.4V5a2 2 0 0 1 2-2H19"/>
+      <rect x="5.4" y="6.6" width="16.8" height="13.4" rx="2"/>
+      <rect x="12.1" y="10.2" width="3.4" height="6.2" rx="1.7"/>
+    </svg>
+    Payments
+  </button>
+  <button class="tab" type="button" data-soon>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="2.6" y="7" width="18.8" height="14.2" rx="2.6"/>
+      <path d="M4.2 7.1 16.2 3a1.5 1.5 0 0 1 2 1.4V7"/>
+      <circle cx="16.6" cy="14.1" r="1.25" fill="currentColor" stroke="none"/>
+    </svg>
+    Balances
+  </button>
+  <button class="tab" type="button" data-soon>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="9" cy="8.4" r="3.3"/>
+      <path d="M2.6 18.6a4.2 4.2 0 0 1 4.2-4.2h4.4a4.2 4.2 0 0 1 4.2 4.2v.4a1.6 1.6 0 0 1-1.6 1.6H4.2A1.6 1.6 0 0 1 2.6 19Z"/>
+      <circle cx="16.6" cy="6.2" r="2.7"/>
+      <path d="M17.6 12.3h.6a3.9 3.9 0 0 1 3.9 3.9v.5a1.6 1.6 0 0 1-1.6 1.6h-1.2"/>
+    </svg>
+    Customers
+  </button>
+  <button class="tab" type="button" data-soon>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="10.4" cy="10.4" r="7"/>
+      <path d="m15.6 15.6 5.4 5.4"/>
+    </svg>
+    Search
+  </button>
+</nav>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- Demo numbers (ranges built from the owner's own figures) ----------
+  // 30-day window: revenue $76,305.34 (excl. tax), 50.70% margin -> $38,688.76 net profit (kept under $40,000),
+  // average order $1,835.52 (~42 paid orders), ~6,195 ft of lights, 6.51% sales tax set aside ($4,970.58).
+  const BASE = {
+    revenue: 76305.34,
+    margin: 38688.76 / 76305.34,
+    avgOrder: 1835.52,
+    feetPerDollar: 6195 / 76305.34,
+    taxRate: 4970.58 / 76305.34,
+    profitCap: 39900
+  };
+  const DAYS = 30;
+  const DAY_MS = 864e5;
+  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const daysBetween = (a, b) => Math.round((b - a) / DAY_MS);
+  const dataStart = addDays(today, -(DAYS - 1));
+
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  function gauss() {
+    let u = 0, v = 0;
+    while (!u) u = Math.random();
+    while (!v) v = Math.random();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+  function pickWeighted(w) {
+    const total = w.reduce((s, x) => s + x, 0);
+    let r = Math.random() * total;
+    for (let i = 0; i < w.length; i++) { r -= w[i]; if (r <= 0) return i; }
+    return w.length - 1;
+  }
+  // Split an integer total into parts proportional to weights (largest-remainder rounding).
+  function apportion(total, weights) {
+    const sum = weights.reduce((s, x) => s + x, 0);
+    const exact = weights.map(w => (w / sum) * total);
+    const out = exact.map(Math.floor);
+    let rest = total - out.reduce((s, x) => s + x, 0);
+    const order = exact.map((x, i) => [x - Math.floor(x), i]).sort((a, b) => b[0] - a[0]);
+    for (let k = 0; k < rest; k++) out[order[k % order.length][1]]++;
+    return out;
+  }
+
+  function generate() {
+    const revenueCents = Math.round(BASE.revenue * rnd(0.965, 1.025) * 100);
+    let margin = BASE.margin + rnd(-0.0025, 0.0025);
+    if ((revenueCents / 100) * margin >= BASE.profitCap) margin = (BASE.profitCap - 1) / (revenueCents / 100);
+    const orderCount = Math.round(revenueCents / 100 / (BASE.avgOrder * rnd(0.97, 1.03)));
+
+    // Which day each paid order landed on (weekdays busier than weekends).
+    const weights = [];
+    for (let i = 0; i < DAYS; i++) {
+      const dow = addDays(dataStart, i).getDay();
+      weights.push(dow === 0 ? 0.35 : dow === 6 ? 0.75 : 1);
+    }
+    const perDay = new Array(DAYS).fill(0);
+    for (let k = 0; k < orderCount; k++) perDay[pickWeighted(weights)]++;
+    const moveInto = idx => {
+      let from = 0;
+      for (let i = 0; i < DAYS - 2; i++) if (perDay[i] > perDay[from]) from = i;
+      perDay[from]--; perDay[idx]++;
+    };
+    if (perDay[DAYS - 2] === 0) moveInto(DAYS - 2);
+    if (now.getHours() >= 11 && perDay[DAYS - 1] === 0) moveInto(DAYS - 1);
+
+    // Order sizes vary around the average; they add up exactly to the revenue total.
+    const orderCents = apportion(revenueCents, Array.from({ length: orderCount }, () => Math.exp(0.38 * gauss())));
+    const feetTotal = Math.round((revenueCents / 100) * BASE.feetPerDollar);
+    const orderFeet = apportion(feetTotal, orderCents.map(c => c * (1 + rnd(-0.1, 0.1))));
+
+    const day = {
+      revenue: new Array(DAYS).fill(0),
+      profit: new Array(DAYS).fill(0),
+      orders: perDay.slice(),
+      feet: new Array(DAYS).fill(0),
+      tax: new Array(DAYS).fill(0)
+    };
+    let o = 0;
+    for (let i = 0; i < DAYS; i++) {
+      for (let k = 0; k < perDay[i]; k++, o++) {
+        day.revenue[i] += orderCents[o];
+        day.feet[i] += orderFeet[o];
+      }
+    }
+    day.profit = apportion(Math.round(revenueCents * margin), day.revenue.map(c => c || 0));
+    day.tax = apportion(Math.round(revenueCents * BASE.taxRate), day.revenue.map(c => c || 0));
+    // Net volume from sales = revenue minus card fees (2.9% + $0.30 per payment)
+    day.net = day.revenue.map((c, i) => c ? c - Math.round(c * 0.029) - day.orders[i] * 30 : 0);
+    return day;
+  }
+
+  const data = generate();
+
+  // ---------- Formatting ----------
+  const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+  const int = new Intl.NumberFormat("en-US");
+  const fmt = {
+    money: c => money.format(c / 100),
+    count: n => int.format(n),
+    feet: n => int.format(n) + " ft"
+  };
+  const md = d => MON[d.getMonth()] + " " + d.getDate();
+  function rangeLabel(key, s, e) {
+    if (key === "1Y" || key === "YTD" || key === "ALL") {
+      return MON[s.getMonth()] + " " + s.getFullYear() + " – " + MON[e.getMonth()] + " " + e.getFullYear();
+    }
+    return dayRange(s, e);
+  }
+  function dayRange(s, e) {
+    if (daysBetween(s, e) === 0) return md(e) + ", " + e.getFullYear();
+    if (s.getFullYear() !== e.getFullYear()) return md(s) + ", " + s.getFullYear() + " – " + md(e) + ", " + e.getFullYear();
+    if (s.getMonth() === e.getMonth()) return md(s) + " – " + e.getDate() + ", " + e.getFullYear();
+    return md(s) + " – " + md(e) + ", " + e.getFullYear();
+  }
+
+  // ---------- Periods ----------
+  const RANGES = ["1W", "4W", "1Y", "MTD", "QTD", "YTD", "ALL"];
+  function periodStart(key) {
+    const y = today.getFullYear(), m = today.getMonth();
+    switch (key) {
+      case "1W": return addDays(today, -6);
+      case "4W": return addDays(today, -27);
+      case "1Y": return new Date(y - 1, m, today.getDate() + 1);
+      case "MTD": return new Date(y, m, 1);
+      case "QTD": return new Date(y, Math.floor(m / 3) * 3, 1);
+      case "YTD": return new Date(y, 0, 1);
+      default: return dataStart;
+    }
+  }
+  function series(metric, start) {
+    const span = daysBetween(start, today) + 1;
+    const pts = [0];
+    let cum = 0;
+    for (let k = 0; k < span; k++) {
+      const idx = daysBetween(dataStart, addDays(start, k));
+      if (idx >= 0 && idx < DAYS) cum += data[metric][idx];
+      pts.push(cum);
+    }
+    return pts;
+  }
+  function total(metric, start) {
+    let s = 0;
+    for (let i = 0; i < DAYS; i++) if (addDays(dataStart, i) >= start) s += data[metric][i];
+    return s;
+  }
+  function activeDays(start) {
+    let n = 0;
+    for (let i = 0; i < DAYS; i++) if (addDays(dataStart, i) >= start) n++;
+    return Math.max(n, 1);
+  }
+
+  // ---------- Yesterday / Today cards ----------
+  function statCard(items) {
+    const card = document.createElement("div");
+    card.className = "stat";
+    for (const [label, value] of items) {
+      const col = document.createElement("div");
+      const l = document.createElement("span"); l.className = "l"; l.textContent = label;
+      const v = document.createElement("span"); v.className = "v"; v.textContent = value;
+      col.append(l, v);
+      card.append(col);
+    }
+    return card;
+  }
+  const daysEl = document.getElementById("days");
+  [["Yesterday", DAYS - 2], ["Today", DAYS - 1]].forEach(([title, i]) => {
+    const slide = document.createElement("div");
+    slide.className = "day";
+    const h = document.createElement("h2"); h.textContent = title;
+    slide.append(h, statCard([
+      ["Gross volume", fmt.money(data.revenue[i])],
+      ["Orders", fmt.count(data.orders[i])],
+      ["Customers", fmt.count(data.orders[i])]
+    ]));
+    daysEl.append(slide);
+  });
+  requestAnimationFrame(() => { daysEl.scrollLeft = daysEl.scrollWidth; });
+
+  // ---------- Range pills ----------
+  let current = "ALL";
+  const rangesEl = document.getElementById("ranges");
+  for (const key of RANGES) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = key;
+    b.setAttribute("aria-pressed", String(key === current));
+    b.addEventListener("click", () => {
+      current = key;
+      rangesEl.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+      renderReports();
+    });
+    rangesEl.append(b);
+  }
+  requestAnimationFrame(() => {
+    const sel = rangesEl.querySelector('[aria-pressed="true"]');
+    const over = sel.offsetLeft + sel.offsetWidth - (rangesEl.scrollLeft + rangesEl.clientWidth);
+    if (over > 0) rangesEl.scrollLeft += over + 4;
+  });
+
+  // ---------- Reports ----------
+  const METRICS = [
+    { key: "revenue", title: "Gross volume", f: fmt.money },
+    { key: "net", title: "Net volume from sales", f: fmt.money },
+    { key: "orders", title: "Successful payments", f: fmt.count },
+    { key: "feet", title: "Feet of lights", f: fmt.feet },
+    { key: "tax", title: "Sales tax set aside", f: fmt.money }
+  ];
+  const reportsEl = document.getElementById("reports");
+  const blocks = [];
+
+  function makeBlock(title) {
+    const sec = document.createElement("section");
+    sec.className = "report gutter";
+    const t = document.createElement("h3"); t.className = "r-title"; t.textContent = title;
+    const v = document.createElement("p"); v.className = "r-value";
+    const r = document.createElement("p"); r.className = "r-range";
+    sec.append(t, v, r);
+    reportsEl.append(sec);
+    const hr = document.createElement("div"); hr.className = "hr";
+    reportsEl.append(hr);
+    return { sec, v, r };
+  }
+
+  for (const m of METRICS) {
+    const b = makeBlock(m.title);
+    const chart = document.createElement("div");
+    chart.className = "chart";
+    chart.tabIndex = 0;
+    chart.setAttribute("role", "img");
+    const startChip = document.createElement("span"); startChip.className = "chip";
+    const endChip = document.createElement("span"); endChip.className = "chip";
+    chart.innerHTML = '<svg aria-hidden="true"></svg>';
+    chart.append(startChip, endChip);
+    b.sec.append(chart);
+    Object.assign(b, { m, chart, svg: chart.querySelector("svg"), startChip, endChip });
+    attachScrub(b);
+    blocks.push(b);
+  }
+
+  const avg = makeBlock("Averages");
+  avg.card = null;
+
+  const PAD_X = 3.3, TOP = 17, BASE_Y = 117.2;
+
+  function geometry(b) {
+    const w = b.chart.clientWidth;
+    const max = b.pts[b.pts.length - 1] || 0;
+    const x0 = PAD_X, x1 = w - PAD_X;
+    const n = b.pts.length - 1;
+    const X = k => x0 + (k / n) * (x1 - x0);
+    const Y = v => (max > 0 ? BASE_Y - (v / max) * (BASE_Y - TOP) : BASE_Y);
+    return { w, x0, x1, X, Y };
+  }
+
+  function drawChart(b, focusK) {
+    const g = geometry(b);
+    const pts = b.pts;
+    let d = "";
+    pts.forEach((v, k) => { d += (k ? "L" : "M") + g.X(k).toFixed(2) + " " + g.Y(v).toFixed(2); });
+    const k = focusK == null ? pts.length - 1 : focusK;
+    const fx = g.X(k), fy = g.Y(pts[k]);
+    b.svg.setAttribute("viewBox", "0 0 " + g.w + " 120");
+    b.svg.innerHTML =
+      '<line x1="' + g.x0 + '" x2="' + g.x1 + '" y1="' + BASE_Y + '" y2="' + BASE_Y + '" stroke="var(--line)" stroke-width="1"/>' +
+      '<path d="' + d + '" fill="none" stroke="var(--accent-ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<circle cx="' + fx.toFixed(2) + '" cy="' + fy.toFixed(2) + '" r="3.3" fill="var(--accent-ink)"/>';
+
+    b.startChip.textContent = b.m.f(0);
+    b.startChip.style.left = (g.x0 - 2.6) + "px";
+    b.startChip.style.top = (g.Y(0) - 2.5 - 15) + "px";
+    b.startChip.hidden = focusK != null && fx - g.x0 < 70;
+
+    b.endChip.textContent = b.m.f(pts[k]);
+    const cw = b.endChip.offsetWidth;
+    const left = Math.min(Math.max(fx + 2.6 - cw, 0), g.w - cw);
+    b.endChip.style.left = left + "px";
+    b.endChip.style.top = Math.max(fy - 2.3 - 15, -2) + "px";
+  }
+
+  function fillBlock(b, focusK) {
+    const start = b.start;
+    if (focusK == null) {
+      b.v.textContent = b.m.f(b.pts[b.pts.length - 1]);
+      b.r.textContent = rangeLabel(current, start, today);
+    } else {
+      b.v.textContent = b.m.f(b.pts[focusK]);
+      b.r.textContent = dayRange(start, addDays(start, focusK - 1));
+    }
+    drawChart(b, focusK);
+  }
+
+  function renderReports() {
+    const start = periodStart(current);
+    for (const b of blocks) {
+      b.start = start;
+      b.pts = series(b.m.key, start);
+      b.chart.setAttribute("aria-label", b.m.title + ", " + rangeLabel(current, start, today) + ": " + b.m.f(b.pts[b.pts.length - 1]));
+      fillBlock(b, null);
+    }
+    // Averages for the same range
+    const rev = total("revenue", start), prof = total("profit", start), ord = total("orders", start);
+    const n = activeDays(start);
+    avg.v.textContent = "";
+    avg.v.hidden = true;
+    avg.r.textContent = rangeLabel(current, start, today);
+    const card = statCard([
+      ["Avg order", ord ? fmt.money(Math.round(rev / ord)) : fmt.money(0)],
+      ["Revenue / day", fmt.money(Math.round(rev / n))],
+      ["Profit / day", fmt.money(Math.round(prof / n))]
+    ]);
+    if (avg.card) avg.card.replaceWith(card); else avg.sec.append(card);
+    avg.card = card;
+  }
+
+  function attachScrub(b) {
+    let active = false;
+    const pick = e => {
+      const rect = b.chart.getBoundingClientRect();
+      const g = geometry(b);
+      const t = (e.clientX - rect.left - g.x0) / (g.x1 - g.x0);
+      return Math.min(b.pts.length - 1, Math.max(1, Math.round(t * (b.pts.length - 1))));
+    };
+    b.chart.addEventListener("pointerdown", e => { active = true; fillBlock(b, pick(e)); });
+    b.chart.addEventListener("pointermove", e => {
+      if (e.pointerType === "mouse" || active) fillBlock(b, pick(e));
+    });
+    const end = () => { active = false; fillBlock(b, null); };
+    b.chart.addEventListener("pointerup", end);
+    b.chart.addEventListener("pointercancel", end);
+    b.chart.addEventListener("pointerleave", end);
+  }
+
+  renderReports();
+  let rw = window.innerWidth;
+  window.addEventListener("resize", () => {
+    if (window.innerWidth === rw) return;
+    rw = window.innerWidth;
+    blocks.forEach(b => fillBlock(b, null));
+  });
+
+  // ---------- Buttons that belong to the full version ----------
+  const toast = document.getElementById("toast");
+  let toastTimer;
+  document.querySelectorAll("[data-soon]").forEach(el => el.addEventListener("click", () => {
+    toast.textContent = "This demo only has the Home screen for now.";
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
+  }));
+})();
+</script>
+
+</body>
+</html>
