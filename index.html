@@ -686,7 +686,7 @@ h1, h2, h3, p { margin: 0; }
   const toast = document.getElementById("toast");
   let toastTimer;
   document.querySelectorAll("[data-soon]").forEach(el => el.addEventListener("click", () => {
-    toast.textContent = "This demo only has the Home screen for now.";
+    toast.textContent = "This only has the Home screen for now.";
     toast.classList.add("show");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
